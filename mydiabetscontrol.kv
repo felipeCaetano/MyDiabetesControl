@@ -1,0 +1,63 @@
+BoxLayout:
+    orientation: "vertical"
+
+    MDToolbar:
+        size_hint: 1, .1
+        title: "MyDiabetes Control"
+        
+    BoxLayout:
+        size_hint: 1, .5
+        MDTabs:
+            id: tabs
+            on_tab_switch: app.on_tab_switch(*args)
+    MDLabel:
+        text: "Recentes:"
+        bold: True
+        size_hint: 1, .1
+    ScrollView:
+        MDList:
+            id: md_list
+            padding: 0
+    MDFloatingActionButtonSpeedDial:
+        size_hint_y: None
+        height: self.height
+        data: app.data
+        root_button_anim: True
+        hint_animation: True
+        bg_hint_color: app.theme_cls.primary_light
+        md_bg_color: app.theme_cls.primary_color
+
+<DiabetesCard>:
+    orientation: "vertical"
+    padding: "8dp"
+    size_hint_y: None
+    height: self.height
+    pos_hint: {"center_x": .5, "center_y": .5}
+    MDLabel:
+        #size_hint_y: None
+        #height: self.height
+        text: root.title
+        theme_text_color: "Secondary"
+
+    # MDSeparator:
+    #     height: "2dp"
+
+    BoxLayout:
+        size_hint_y: None
+        height: "30dp"
+        MDLabel:
+            text: root.line
+        MDIconButton:
+            icon: "trash-can"
+            text: "Deletar"
+        MDIconButton:
+            icon: "pencil"
+            text: "Editar"
+
+
+<Tab>:
+    BoxLayout:
+        orientation: 'vertical'
+        size: (50, 100)
+        padding_right: 50
+        id: label
