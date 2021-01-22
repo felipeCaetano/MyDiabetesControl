@@ -1,11 +1,12 @@
-import itertools
 from collections import OrderedDict
+from math import sin
 
 from kivy.lang import Builder
 from kivy.properties import StringProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
-
+from kivy.utils import get_color_from_hex as rgb
+from kivy_garden.graph import Graph, MeshLinePlot
 from kivymd.app import MDApp
 from kivymd.theming import ThemableBehavior
 from kivymd.uix.behaviors import RectangularElevationBehavior
@@ -15,13 +16,7 @@ from kivymd.uix.list import MDList, OneLineIconListItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.tab import MDTabsBase
 
-from kivy.utils import get_color_from_hex as rgb, get_color_from_hex
-from kivy_garden.graph import Graph, MeshLinePlot
-from math import sin
-
-
 KV = '''
-
 Screen:     
     NavigationLayout:
         ScreenManager:
@@ -34,7 +29,8 @@ Screen:
                         size_hint: 1, .1
                         title: "MyDiabetes Control"
                         elevation: 10
-                        left_action_items: [['menu', lambda x: nav_drawer.set_state("open")]]
+                        left_action_items: [['menu',
+                                    lambda x: nav_drawer.set_state("open")]]
                         
                         MDIconButton:
                             id: button_2
@@ -100,6 +96,7 @@ Screen:
 Builder.load_file('tab.kv')
 Builder.load_file('diabetescard.kv')
 
+
 class ItemDrawer(OneLineIconListItem):
     icon = StringProperty()
     text_color = ListProperty((0, 0, 0, 1))
@@ -111,7 +108,7 @@ class ContentNavigationDrawer(BoxLayout):
 
 class DrawerList(ThemableBehavior, MDList):
     def set_color_item(self, instance_item):
-        '''Called when tap on a menu item.'''
+        """Called when tap on a menu item."""
 
         # Set the color of the icon and text for the menu item.
         for item in self.children:
@@ -122,7 +119,7 @@ class DrawerList(ThemableBehavior, MDList):
 
 
 class Tab(FloatLayout, MDTabsBase):
-    '''Class implementing content for a tab.'''
+    """Class implementing content for a tab."""
 
 
 class DiabetesCard(MDCard):
@@ -154,7 +151,6 @@ class Example(MDApp):
         self.theme_cls.accent_palette = "Yellow"
         return Builder.load_string(KV)
 
-
     def on_start(self):
         icons_item = OrderedDict({
             "calendar-today": "Diário",
@@ -180,41 +176,47 @@ class Example(MDApp):
             else:
                 self.root.ids.nd_list.add_widget(
                     ItemDrawer(icon=icon_name, text=icons_item[icon_name])
-            )
+                )
 
         self.root.ids.tabs.add_widget(Tab(text=f"Diário"))
         self.root.ids.tabs.add_widget(Tab(text=f"Semanal"))
         self.root.ids.tabs.add_widget(Tab(text=f"Mensal"))
 
-        #pegar do banco
+        # pegar do banco
         self.root.ids.md_list.add_widget(DiabetesCard(title="Em Jejum",
-                                                     line="08:05h  250"))
+                                                      line="08:05h  250"))
         self.root.ids.md_list.add_widget(DiabetesCard(title="Após o Almoço",
-                                                     line="14:35h  230"))
+                                                      line="14:35h  230"))
         self.root.ids.md_list.add_widget(DiabetesCard(title="Após o Jantar",
-                                                     line="21:15h  200"))
+                                                      line="21:15h  200"))
         self.menu_2 = self.create_menu(
-            "Button dots", self.root.ids.button_2,)
+            [{'icon': 'printer', 'text': "Imprimir"},
+             {'icon': 'cog', 'text': "configurações"}],
+            self.root.ids.button_2, )
 
     def create_menu(self, text, instance):
-        menu_items = [{"icon": "git", "text": text} for i in range(5)]
-        menu = MDDropdownMenu(caller=instance, items=menu_items, width_mult=5)
+        menu_items = [{"icon": i['icon'], "text": i['text']} for i in text]
+        menu = MDDropdownMenu(caller=instance, items=menu_items, width_mult=4)
         menu.bind(on_release=self.menu_callback)
         return menu
 
     def menu_callback(self, instance_menu, instance_menu_item):
+        if instance_menu_item.icon == 'printer':
+            print("imprimindo")
+        else:
+            print('configurando')
         instance_menu.dismiss()
 
     def on_tab_switch(
-        self, instance_tabs, instance_tab, instance_tab_label, tab_text
+            self, instance_tabs, instance_tab, instance_tab_label, tab_text
     ):
-        '''Called when switching tabs.
+        """Called when switching tabs.
 
         :type instance_tabs: <kivymd.uix.tab.MDTabs object>;
         :param instance_tab: <__main__.Tab object>;
         :param instance_tab_label: <kivymd.uix.tab.MDTabsLabel object>;
         :param tab_text: text or name icon of tab;
-        '''
+        """
 
         box = instance_tab.ids.label
         graph = self.create_graph()
@@ -224,9 +226,9 @@ class Example(MDApp):
         box.add_widget(graph)
 
     def create_graph(self):
-        colors = itertools.cycle([
-            rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')
-        ])
+        # colors = itertools.cycle([
+        #     rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')
+        # ])
         graph_theme = {
             'label_options': {
                 'color': (0, 0, 0, 1),
@@ -253,7 +255,7 @@ class Example(MDApp):
                       **graph_theme)
 
         plot = MeshLinePlot(color=rgb('66a8d4'))
-        plot.points = [(x, sin(x/10.)) for x in range(0, 101)]
+        plot.points = [(x, sin(x / 10.)) for x in range(0, 101)]
         graph.add_plot(plot)
         return graph
 
