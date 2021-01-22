@@ -1,15 +1,21 @@
 import itertools
+from collections import OrderedDict
 
 from kivy.lang import Builder
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 
 from kivymd.app import MDApp
-from kivymd.uix.card import MDCard
+from kivymd.theming import ThemableBehavior
+from kivymd.uix.behaviors import RectangularElevationBehavior
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.card import MDCard, MDSeparator
+from kivymd.uix.list import MDList, OneLineIconListItem
+from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.tab import MDTabsBase
 
-from kivy.utils import get_color_from_hex as rgb
+from kivy.utils import get_color_from_hex as rgb, get_color_from_hex
 from kivy_garden.graph import Graph, MeshLinePlot
 from math import sin
 
@@ -18,20 +24,24 @@ KV = '''
 
 Screen:     
     NavigationLayout:
-
         ScreenManager:
-
             Screen:
-
                 BoxLayout:
                     orientation: 'vertical'
-
                     MDToolbar:
+                        id: toolbar
+                        padding: 5
                         size_hint: 1, .1
                         title: "MyDiabetes Control"
                         elevation: 10
                         left_action_items: [['menu', lambda x: nav_drawer.set_state("open")]]
-
+                        
+                        MDIconButton:
+                            id: button_2
+                            icon: "dots-vertical"
+                            pos_hint: {"center_y": .5}
+                            on_release: app.menu_2.open()
+                        
                     BoxLayout:
                         size_hint: 1, .75
                         MDTabs:
@@ -58,47 +68,57 @@ Screen:
             id: nav_drawer
 
             ContentNavigationDrawer:
-        
+                id: content_drawer
+                orientation: "vertical"
+                padding: "8dp"
+                spacing: "8dp"
             
-<DiabetesCard>:
-    orientation: "vertical"
-    padding: "8dp"
-    size_hint_y: None
-    height: self.height
-    pos_hint: {"center_x": .5, "center_y": .5}
-    MDLabel:
-        #size_hint_y: None
-        #height: self.height
-        text: root.title
-        theme_text_color: "Secondary"
-                    
-    # MDSeparator:
-    #     height: "2dp"
+                MDLabel:
+                    text: "MyDiabets Control"
+                    font_style: "Button"
+                    size_hint_y: None
+                    height: self.texture_size[1]
+            
+                MDSeparator:
 
-    BoxLayout:
-        size_hint_y: None
-        height: "30dp"
-        MDLabel:
-            text: root.line
-        MDIconButton:
-            icon: "trash-can"
-            text: "Deletar"
-        MDIconButton:
-            icon: "pencil"
-            text: "Editar"
-                    
-                    
-<Tab>:
-    BoxLayout:
-        orientation: 'vertical'
-        padding_right: 5
-        id: label
+                ScrollView:
+                    DrawerList:
+                        id: nd_list
 
+# Menu item in the DrawerList list.
+<ItemDrawer>:
+    theme_text_color: "Custom"
+    on_release: self.parent.set_color_item(self)
+    divider: None
+    IconLeftWidget:
+        id: icon
+        icon: root.icon
+        theme_text_color: "Custom"
+        text_color: root.text_color
 '''
+
+Builder.load_file('tab.kv')
+Builder.load_file('diabetescard.kv')
+
+class ItemDrawer(OneLineIconListItem):
+    icon = StringProperty()
+    text_color = ListProperty((0, 0, 0, 1))
 
 
 class ContentNavigationDrawer(BoxLayout):
     pass
+
+
+class DrawerList(ThemableBehavior, MDList):
+    def set_color_item(self, instance_item):
+        '''Called when tap on a menu item.'''
+
+        # Set the color of the icon and text for the menu item.
+        for item in self.children:
+            if item.text_color == self.theme_cls.primary_color:
+                item.text_color = self.theme_cls.text_color
+                break
+        instance_item.text_color = self.theme_cls.primary_color
 
 
 class Tab(FloatLayout, MDTabsBase):
@@ -111,16 +131,57 @@ class DiabetesCard(MDCard):
     line = StringProperty()
 
 
+class DiabetesToolbar(
+    ThemableBehavior, RectangularElevationBehavior, MDBoxLayout,
+):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.md_bg_color = self.theme_cls.primary_color
+
+
 class Example(MDApp):
     data = {
         'language-python': 'Python',
         'scale-bathroom': 'Peso',
         'diabetes': 'Glicemia',
     }
+
     def build(self):
+        self.theme_cls.theme_style = "Light"
+        self.theme_cls.primary_palette = "Cyan"
+        self.theme_cls.primary_hue = 'A700'
+        self.theme_cls.primary_light_hue = "200"
+        self.theme_cls.accent_palette = "Yellow"
         return Builder.load_string(KV)
 
+
     def on_start(self):
+        icons_item = OrderedDict({
+            "calendar-today": "Diário",
+            "calendar-week": "Semanal",
+            "calendar-month": "Mensal",
+            "account": "Perfil",
+            "file-chart-outline": "Relatórios",
+            "cog": "Configurações",
+            "information-outline": "Sobre o App",
+            "message-alert": "Ajuda e Feedback",
+        })
+        for icon_name in icons_item.keys():
+            if icon_name == 'cog':
+                self.root.ids.nd_list.add_widget(
+                    ItemDrawer(icon=icon_name, text=icons_item[icon_name])
+                )
+                self.root.ids.nd_list.add_widget(MDSeparator())
+            elif icon_name == 'file-chart-outline':
+                self.root.ids.nd_list.add_widget(MDSeparator())
+                self.root.ids.nd_list.add_widget(
+                    ItemDrawer(icon=icon_name, text=icons_item[icon_name])
+                )
+            else:
+                self.root.ids.nd_list.add_widget(
+                    ItemDrawer(icon=icon_name, text=icons_item[icon_name])
+            )
+
         self.root.ids.tabs.add_widget(Tab(text=f"Diário"))
         self.root.ids.tabs.add_widget(Tab(text=f"Semanal"))
         self.root.ids.tabs.add_widget(Tab(text=f"Mensal"))
@@ -132,6 +193,17 @@ class Example(MDApp):
                                                      line="14:35h  230"))
         self.root.ids.md_list.add_widget(DiabetesCard(title="Após o Jantar",
                                                      line="21:15h  200"))
+        self.menu_2 = self.create_menu(
+            "Button dots", self.root.ids.button_2,)
+
+    def create_menu(self, text, instance):
+        menu_items = [{"icon": "git", "text": text} for i in range(5)]
+        menu = MDDropdownMenu(caller=instance, items=menu_items, width_mult=5)
+        menu.bind(on_release=self.menu_callback)
+        return menu
+
+    def menu_callback(self, instance_menu, instance_menu_item):
+        instance_menu.dismiss()
 
     def on_tab_switch(
         self, instance_tabs, instance_tab, instance_tab_label, tab_text
@@ -159,7 +231,7 @@ class Example(MDApp):
             'label_options': {
                 'color': (0, 0, 0, 1),
                 'bold': False},
-            'background_color': (.9, .9, .9, 1),
+            'background_color': (.98, .98, .98, 1),
             'tick_color': rgb('808080'),
             'border_color': rgb('808080')
         }
@@ -180,8 +252,7 @@ class Example(MDApp):
                       ymax=1,
                       **graph_theme)
 
-        #plot = MeshLinePlot(color=[1, 0, 0, 1])
-        plot = MeshLinePlot(color=next(colors))
+        plot = MeshLinePlot(color=rgb('66a8d4'))
         plot.points = [(x, sin(x/10.)) for x in range(0, 101)]
         graph.add_plot(plot)
         return graph

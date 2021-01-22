@@ -1,0 +1,23 @@
+<DiabetesCard>:
+    orientation: "vertical"
+    padding: "8dp"
+    size_hint_y: None
+    height: self.height
+    pos_hint: {"center_x": .5, "center_y": .5}
+    MDLabel:
+        #size_hint_y: None
+        #height: self.height
+        text: root.title
+        theme_text_color: "Secondary"
+
+    BoxLayout:
+        size_hint_y: None
+        height: "30dp"
+        MDLabel:
+            text: root.line
+        MDIconButton:
+            icon: "trash-can"
+            text: "Deletar"
+        MDIconButton:
+            icon: "pencil"
+            text: "Editar"
